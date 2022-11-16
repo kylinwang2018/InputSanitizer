@@ -21,7 +21,7 @@ namespace InputSanitizer
             {
                 // if it is a string
                 if (input is string)
-                    return CleanString(lastPropertyName??"User Input", (string)input, policyName, modelState);
+                    return Cleaner.CleanString(lastPropertyName??"User Input", (string)input, policyName, modelState);
             }
             catch (ProhabitedStringValueException ex)
             {
@@ -88,7 +88,7 @@ namespace InputSanitizer
                 {
                     try
                     {
-                        var value = CleanString(
+                        var value = Cleaner.CleanString(
                             prop.Name.ToCamelCase(), 
                             (string)prop.GetValue(input), 
                             selectedPolicyName, 
@@ -125,58 +125,6 @@ namespace InputSanitizer
             }
 
             return input;
-        }
-
-        private static string CleanString(string keyName, string orginalTxt, string policyName, ModelStateDictionary modelState)
-        {
-            HtmlSanitizerOptions htmlSanitizerOptions;
-            HtmlSanitizer htmlSanitizer;
-            PatternSanitizer patternSanitizer;
-            InputSanitizerPolicy policy = null;
-            if (!string.IsNullOrEmpty(policyName) &&
-                    PolicyCollection.Policies.TryGetValue(policyName, out policy))
-            {
-                htmlSanitizerOptions = new HtmlSanitizerOptions()
-                {
-                    AllowedAtRules= policy.AllowedAtRules,
-                    AllowedSchemes= policy.AllowedSchemes,
-                    AllowedAttributes= policy.AllowedAttributes,
-                    AllowedCssClasses= policy.AllowedCssClasses,
-                    AllowedCssProperties= policy.AllowedCssProperties,
-                    AllowedTags= policy.AllowedTags,
-                    UriAttributes= policy.UriAttributes
-                };
-
-                htmlSanitizer = new HtmlSanitizer(htmlSanitizerOptions);
-                patternSanitizer = new PatternSanitizer(policy);
-            }
-            else
-            {
-                htmlSanitizer = new HtmlSanitizer();
-                patternSanitizer = new PatternSanitizer();
-            }
-
-            var value = patternSanitizer.Sanitize(orginalTxt);
-            value = htmlSanitizer.Sanitize(value);
-
-            if (policy != null)
-            {
-                switch (policy.InvalidInputBehaviour)
-                {
-                    case InvalidInputBehaviour.JustSanitize:
-                        // do nothing, already sanitized
-                        break;
-                    case InvalidInputBehaviour.ThrowException:
-                        if (orginalTxt != value)
-                            throw new ProhabitedStringValueException(policy.ExceptionMessage ?? "");
-                        break;
-                    case InvalidInputBehaviour.SetModelState:
-                        if (orginalTxt != value)
-                            modelState.TryAddModelError(keyName, policy.ExceptionMessage);
-                        break;
-                }
-            }
-            return value;
         }
     }
 }

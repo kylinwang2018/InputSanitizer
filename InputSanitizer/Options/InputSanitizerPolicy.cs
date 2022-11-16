@@ -44,6 +44,11 @@ namespace InputSanitizer
         JustSanitize,
 
         /// <summary>
+        ///     Sanitize disallowed string patterns after encode all html string
+        /// </summary>
+        EncodeHtmlAndSanitizeRegex,
+
+        /// <summary>
         ///     Throw an exception that need to be handle
         /// </summary>
         ThrowException,

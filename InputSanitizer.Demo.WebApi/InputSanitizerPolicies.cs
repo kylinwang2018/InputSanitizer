@@ -18,7 +18,7 @@ namespace InputSanitizer.Demo.WebApi
                 AllowedAtRules = new HashSet<CssRuleType>(HtmlSanitizerDefaults.AllowedAtRules),
                 AllowedCssClasses = new HashSet<string>(HtmlSanitizerDefaults.AllowedClasses),
                 ExceptionMessage = "What are you doing?",
-                InvalidInputBehaviour = InvalidInputBehaviour.SetModelState
+                InvalidInputBehaviour = InvalidInputBehaviour.EncodeHtmlAndSanitizeRegex
             }
         };
     }

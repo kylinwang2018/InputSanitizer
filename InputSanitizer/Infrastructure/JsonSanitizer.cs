@@ -51,7 +51,7 @@ namespace InputSanitizer.Infrastructure
                     break;
                 case JsonValueKind.String:
                     var text = json.ToString();
-                    text = CleanString(lastPropertyName ?? "User Input", text, policyName, modelState);
+                    text = Cleaner.CleanString(lastPropertyName ?? "User Input", text, policyName, modelState);
                     json = JsonSerializer.SerializeToElement(text);
                     break;
                 case JsonValueKind.Number:
@@ -64,58 +64,6 @@ namespace InputSanitizer.Infrastructure
                     break;
             }
             return json;
-        }
-
-        private static string CleanString(string keyName, string orginalTxt, string policyName, ModelStateDictionary modelState)
-        {
-            HtmlSanitizerOptions htmlSanitizerOptions;
-            HtmlSanitizer htmlSanitizer;
-            PatternSanitizer patternSanitizer;
-            InputSanitizerPolicy policy = null;
-            if (!string.IsNullOrEmpty(policyName) &&
-                    PolicyCollection.Policies.TryGetValue(policyName, out policy))
-            {
-                htmlSanitizerOptions = new HtmlSanitizerOptions()
-                {
-                    AllowedAtRules= policy.AllowedAtRules,
-                    AllowedSchemes= policy.AllowedSchemes,
-                    AllowedAttributes= policy.AllowedAttributes,
-                    AllowedCssClasses= policy.AllowedCssClasses,
-                    AllowedCssProperties= policy.AllowedCssProperties,
-                    AllowedTags= policy.AllowedTags,
-                    UriAttributes= policy.UriAttributes
-                };
-
-                htmlSanitizer = new HtmlSanitizer(htmlSanitizerOptions);
-                patternSanitizer = new PatternSanitizer(policy);
-            }
-            else
-            {
-                htmlSanitizer = new HtmlSanitizer();
-                patternSanitizer = new PatternSanitizer();
-            }
-
-            var value = patternSanitizer.Sanitize(orginalTxt);
-            value = htmlSanitizer.Sanitize(value);
-
-            if (policy != null)
-            {
-                switch (policy.InvalidInputBehaviour)
-                {
-                    case InvalidInputBehaviour.JustSanitize:
-                        // do nothing, already sanitized
-                        break;
-                    case InvalidInputBehaviour.ThrowException:
-                        if (orginalTxt != value)
-                            throw new ProhabitedStringValueException(policy.ExceptionMessage ?? "");
-                        break;
-                    case InvalidInputBehaviour.SetModelState:
-                        if (orginalTxt != value)
-                            modelState.TryAddModelError(keyName, policy.ExceptionMessage);
-                        break;
-                }
-            }
-            return value;
         }
     }
 }
